@@ -126,7 +126,12 @@ impl From<Task> for TaskResponse {
                     deleted_documents: None,
                 }),
             ),
-            TaskContent::IndexDeletion => (TaskType::IndexDeletion, None),
+            TaskContent::IndexDeletion => (
+                TaskType::IndexDeletion,
+                Some(TaskDetails::ClearAll {
+                    deleted_documents: None,
+                }),
+            ),
             TaskContent::SettingsUpdate { settings, .. } => (
                 TaskType::SettingsUpdate,
                 Some(TaskDetails::Settings { settings }),
