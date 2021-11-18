@@ -15,7 +15,7 @@ use tokio::task::spawn_blocking;
 use uuid::Uuid;
 use uuid_store::{HeedUuidStore, UuidStore};
 
-use crate::index::Index;
+use crate::index::{error::Result as IndexResult, Index};
 use crate::options::IndexerOpts;
 use crate::tasks::batch::Batch;
 use crate::tasks::task::{DocumentDeletion, Task, TaskContent, TaskEvent, TaskId, TaskResult};
@@ -179,9 +179,14 @@ where
             }
             TaskContent::DocumentDeletion(DocumentDeletion::Clear) => {
                 let index = self.get_index(index_uid.into_inner()).await?;
-                spawn_blocking(move || index.clear_documents()).await??;
+                let deleted_documents = spawn_blocking(move || -> IndexResult<u64> {
+                    let number_documents = index.stats()?.number_of_documents;
+                    index.clear_documents()?;
+                    Ok(number_documents)
+                })
+                .await??;
 
-                Ok(TaskResult::Other)
+                Ok(TaskResult::ClearAll { deleted_documents })
             }
             TaskContent::SettingsUpdate {
                 settings,

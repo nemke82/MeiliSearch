@@ -49,6 +49,8 @@ enum TaskDetails {
         received_document_ids: usize,
         deleted_documents: Option<u64>,
     },
+    #[serde(rename_all = "camelCase")]
+    ClearAll { deleted_documents: Option<u64> },
 }
 
 fn serialize_duration<S: Serializer>(
@@ -118,7 +120,12 @@ impl From<Task> for TaskResponse {
                     deleted_documents: None,
                 }),
             ),
-            TaskContent::DocumentDeletion(DocumentDeletion::Clear) => (TaskType::ClearAll, None),
+            TaskContent::DocumentDeletion(DocumentDeletion::Clear) => (
+                TaskType::ClearAll,
+                Some(TaskDetails::ClearAll {
+                    deleted_documents: None,
+                }),
+            ),
             TaskContent::IndexDeletion => (TaskType::IndexDeletion, None),
             TaskContent::SettingsUpdate { settings, .. } => (
                 TaskType::SettingsUpdate,
@@ -161,6 +168,16 @@ impl From<Task> for TaskResponse {
                         Some(TaskDetails::DocumentDeletion {
                             ref mut deleted_documents,
                             ..
+                        }),
+                    ) => {
+                        deleted_documents.replace(*docs);
+                    }
+                    (
+                        TaskResult::ClearAll {
+                            deleted_documents: docs,
+                        },
+                        Some(TaskDetails::ClearAll {
+                            ref mut deleted_documents,
                         }),
                     ) => {
                         deleted_documents.replace(*docs);
