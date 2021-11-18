@@ -35,7 +35,7 @@ enum TaskDetails {
     #[serde(rename_all = "camelCase")]
     DocumentsAddition {
         received_documents: usize,
-        indexed_documents: Option<usize>,
+        indexed_documents: Option<u64>,
     },
     #[serde(rename_all = "camelCase")]
     Settings {
@@ -143,25 +143,27 @@ impl From<Task> for TaskResponse {
                 match (result, &mut details) {
                     (
                         TaskResult::DocumentAddition {
-                            number_of_documents,
+                            indexed_documents: num,
+                            ..
                         },
                         Some(TaskDetails::DocumentsAddition {
                             ref mut indexed_documents,
                             ..
                         }),
                     ) => {
-                        indexed_documents.replace(*number_of_documents);
+                        indexed_documents.replace(*num);
                     }
                     (
                         TaskResult::DocumentDeletion {
-                            number_of_documents,
+                            deleted_documents: docs,
+                            ..
                         },
                         Some(TaskDetails::DocumentDeletion {
                             ref mut deleted_documents,
                             ..
                         }),
                     ) => {
-                        deleted_documents.replace(*number_of_documents);
+                        deleted_documents.replace(*docs);
                     }
                     _ => (),
                 }
